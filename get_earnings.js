@@ -11,7 +11,16 @@ async function start() {
 
     let earnings = []
     for(let i = 0 ; i < eps.length ; i++) {
-        await earnings.push([new Date(edates[i].slice(0,12)).toISOString().slice(0,10), parseFloat(eps[i])])
+        let timing, am, time = await parseInt(edates[i].slice(-8,-5).trim())
+        await edates[i].slice(-5,-3) === 'AM' ? am = true : am = false
+        if((time < 9 || time === 12) && am) 
+            timing = 0
+        else if (time >=4 && time < 12 && !am)
+            timing = 2
+        else
+            timing = 1
+        // timing=0: announcment before trading period, timing=1: announcment during trading period, timing=2: announcment after trading period
+        await earnings.push([new Date(edates[i].slice(0,12)).toISOString().slice(0,10), parseFloat(eps[i]), timing])
     }
     
     const json = await JSON.stringify(earnings, null, 2)
