@@ -7,11 +7,12 @@ async function start() {
     await page.goto(`https://finance.yahoo.com/calendar/earnings?symbol=${process.argv[2]}`)
     
     const eps = await page.$$eval("#cal-res-table > div > table > tbody > tr > td:nth-child(5)", el => el.map(e => e.textContent))
+    const estimated_eps = await page.$$eval("#cal-res-table > div > table > tbody > tr > td:nth-child(4)", el => el.map(e => e.textContent))
     const edates = await page.$$eval("#cal-res-table > div > table > tbody > tr > td:nth-child(3)", el => el.map(e => e.textContent))
 
     let earnings = []
     for(let i = 0 ; i < eps.length ; i++) {
-        let timing, am, time = await parseInt(edates[i].slice(-8,-5).trim())
+        let timing, am, time = await parseInt(edates[i].slice(-8,-6).trim())
         await edates[i].slice(-5,-3) === 'AM' ? am = true : am = false
         if((time < 9 || time === 12) && am) 
             timing = 0
@@ -20,7 +21,12 @@ async function start() {
         else
             timing = 1
         // timing=0: announcment before trading period, timing=1: announcment during trading period, timing=2: announcment after trading period
-        await earnings.push([new Date(edates[i].slice(0,12)).toISOString().slice(0,10), parseFloat(eps[i]), timing])
+        await earnings.push({
+            date: new Date(edates[i].slice(0,12)).toISOString().slice(0,10), 
+            eps: parseFloat(eps[i]), 
+            estimated_eps: parseFloat(estimated_eps[i]), 
+            timing: timing
+        })
     }
     
     const json = await JSON.stringify(earnings, null, 2)
